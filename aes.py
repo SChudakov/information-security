@@ -279,7 +279,7 @@ class _AESEncryptor:
         else:
             mult = [2, 1, 1, 3]
         cpy = list(column)
-        g = _AESEncryptor.galois_multiplication
+        g = _AESEncryptor._galois_multiplication
 
         column[0] = g(cpy[0], mult[0]) ^ g(cpy[3], mult[1]) ^ \
                     g(cpy[2], mult[2]) ^ g(cpy[1], mult[3])
@@ -292,7 +292,7 @@ class _AESEncryptor:
         return column
 
     @staticmethod
-    def galois_multiplication(a, b):
+    def _galois_multiplication(a, b):
         p = 0
         for counter in range(8):
             if b & 1: p ^= a
