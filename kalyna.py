@@ -270,7 +270,7 @@ class _KalynaEncryptor:
         self._round_keys = [[]] * (self._nr + 1)
         self._key_expansion(key)
 
-    def _key_expansion(self, key: bytes):
+    def _key_expansion(self, key: bytes) -> None:
         kt = self._key_expand_kt(key)
         self._key_expand_even(key, kt)
         self._key_expand_odd()
@@ -309,13 +309,13 @@ class _KalynaEncryptor:
 
         return kt
 
-    def _add_round_key_expand(self, value: _State, key_state: _State):
+    def _add_round_key_expand(self, value: _State, key_state: _State) -> None:
         self._add_round_key_modulo_2_64(key_state, value)
 
-    def _xor_round_key_expand(self, value: _State, key_state: _State):
+    def _xor_round_key_expand(self, value: _State, key_state: _State) -> None:
         self._xor_round_key_modulo_2_64(key_state, value)
 
-    def _key_expand_even(self, key: bytes, kt: _State):
+    def _key_expand_even(self, key: bytes, kt: _State) -> None:
         initial_data = self._in_to_state(key)
         tmv = self._in_to_state(b'\x01\x00\x01\x00\x01\x00\x01\x00' * self._nb)
 
@@ -402,7 +402,7 @@ class _KalynaEncryptor:
                 state_value[row][column - 1] = state_value[row][column]
             state_value[row][-1] = temp
 
-    def _key_expand_odd(self):
+    def _key_expand_odd(self) -> None:
         for i in range(1, self._nr, 2):
             previous_key = self._round_keys[i - 1]
             current_key = [[previous_key[i][j] for j in range(len(previous_key[i]))] for i in range(len(previous_key))]
@@ -468,7 +468,7 @@ class _KalynaEncryptor:
         self._add_round_key_modulo_2_64(state, self._round_keys[-1])
         return self._state_to_out(state)
 
-    def inv_cipher(self, _in: bytes):
+    def inv_cipher(self, _in: bytes) -> bytes:
         state = self._in_to_state(_in)
 
         self._subtract_round_key_modulo_2_64(state, self._round_keys[-1])
@@ -529,7 +529,7 @@ class _KalynaEncryptor:
                 state[i][column] = columns_difference[i]
 
     @staticmethod
-    def _xor_round_key_modulo_2_64(state: _State, w: _State):
+    def _xor_round_key_modulo_2_64(state: _State, w: _State) -> None:
         for column in range(len(state[0])):
             state_column = [state[i][column] for i in range(8)]
             w_column = [w[i][column] for i in range(8)]
@@ -569,15 +569,15 @@ class _KalynaEncryptor:
         return sequence[a:] + sequence[:a]
 
     @staticmethod
-    def _linear_transformation_over_finite_field(state: _State) -> _State:
-        return _KalynaEncryptor._multiply_by_matrix(state, _KalynaEncryptor._mds_matrix)
+    def _linear_transformation_over_finite_field(state: _State):
+        _KalynaEncryptor._multiply_by_matrix(state, _KalynaEncryptor._mds_matrix)
 
     @staticmethod
-    def _inv_linear_transformation_over_finite_field(state: _State) -> _State:
-        return _KalynaEncryptor._multiply_by_matrix(state, _KalynaEncryptor._mds_inv_matrix)
+    def _inv_linear_transformation_over_finite_field(state: _State):
+        _KalynaEncryptor._multiply_by_matrix(state, _KalynaEncryptor._mds_inv_matrix)
 
     @staticmethod
-    def _multiply_by_matrix(state: _State, matrix: _State) -> _State:
+    def _multiply_by_matrix(state: _State, matrix: _State) -> None:
         result = [[0] * len(state[0]) for _ in range(len(state))]
         # print()
         # print('before multiplication')

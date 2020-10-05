@@ -40,12 +40,20 @@ class KalinaEncryptionDecryptionTest(unittest.TestCase):
         plaintext3 = b''
         plaintext4 = b'aaaaaaaaaaaaa'
         plaintext5 = b'F:SDF:Shf;Sg;JD;fJff;df'
+        plaintext6 = b'The Advanced Encryption Standard Rijndael (AES), also known by its original name (Dutch pronunciation),[3] is a specification for the encryption of electronic data established by the U.S. National Institute of Standards and Technology (NIST) in 2001'
 
         self.assertEqual(plaintext1, algorithm.decrypt(algorithm.encrypt(plaintext1)))
         self.assertEqual(plaintext2, algorithm.decrypt(algorithm.encrypt(plaintext2)))
         self.assertEqual(plaintext3, algorithm.decrypt(algorithm.encrypt(plaintext3)))
         self.assertEqual(plaintext4, algorithm.decrypt(algorithm.encrypt(plaintext4)))
         self.assertEqual(plaintext5, algorithm.decrypt(algorithm.encrypt(plaintext5)))
+        self.assertEqual(plaintext6, algorithm.decrypt(algorithm.encrypt(plaintext6)))
+
+    def test_encrypt_decrypt_loop(self):
+        algorithm = kalyna.Kalyna(block_size=128, key=_default_key())
+        for plaintext_length in range(1, 100):
+            plaintext = b'a' * plaintext_length
+            self.assertEqual(plaintext, algorithm.decrypt(algorithm.encrypt(plaintext)))
 
 
 class KalinaEncryptorCipherTest(unittest.TestCase):
@@ -334,3 +342,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
         key = algorithm._in_to_state(key_bytes)
         algorithm._add_round_key_modulo_2(state, key)
         self.assertEqual(expected_out, algorithm._state_to_out(state))
+
+
+if __name__ == '__main__':
+    unittest.main()

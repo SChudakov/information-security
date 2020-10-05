@@ -2,38 +2,26 @@ import unittest
 import aes
 
 
+def _default_key() -> bytes:
+    return b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
+
+
 class TestAESEncryptDecrypt(unittest.TestCase):
-    def test_encrypt_decrypt_0(self):
-        key = b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
-        algorithm = aes.AES(key=key)
-        self.run_encrypt_test(algorithm, b'', None)
-
     def test_encrypt_decrypt(self):
-        key = b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
-        algorithm = aes.AES(key=key)
-        self.run_encrypt_test(algorithm, b'Semen krasavchik', None)
+        algorithm = aes.AES(key=_default_key())
+        plaintext1 = b''
+        plaintext2 = b'Semen krasavchik'
+        plaintext3 = b'The Advanced Encryption Standard Rijndael (AES), also known by its original name (Dutch pronunciation),[3] is a specification for the encryption of electronic data established by the U.S. National Institute of Standards and Technology (NIST) in 2001'
 
-    def test_encrypt_decrypt_long(self):
-        key = b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
-        algorithm = aes.AES(key=key)
-        self.run_encrypt_test(algorithm,
-                              b'The Advanced Encryption Standard Rijndael (AES), also known by its original name (Dutch pronunciation),[3] is a specification for the encryption of electronic data established by the U.S. National Institute of Standards and Technology (NIST) in 2001',
-                              None)
+        self.assertEqual(plaintext1, algorithm.decrypt(algorithm.encrypt(plaintext1)))
+        self.assertEqual(plaintext2, algorithm.decrypt(algorithm.encrypt(plaintext2)))
+        self.assertEqual(plaintext3, algorithm.decrypt(algorithm.encrypt(plaintext3)))
 
     def test_encrypt_decrypt_loop(self):
-        key = b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
-        algorithm = aes.AES(key=key)
+        algorithm = aes.AES(key=_default_key())
         for plaintext_length in range(1, 100):
             plaintext = b'a' * plaintext_length
             self.assertEqual(plaintext, algorithm.decrypt(algorithm.encrypt(plaintext)))
-
-    def run_encrypt_test(self, algorithm: aes.AES, plaintext: bytes, encrypted: bytes):
-        encrypted = algorithm.encrypt(plaintext)
-        decrypted = algorithm.decrypt(encrypted)
-        print()
-        print(f'encrypted {encrypted}')
-        print(f'decrypted {decrypted}')
-        self.assertEqual(plaintext, decrypted)
 
 
 class TestAESUtility(unittest.TestCase):
@@ -67,8 +55,7 @@ class TestAESUtility(unittest.TestCase):
 class TestAESEncryptorCipher(unittest.TestCase):
 
     def test_cipher(self):
-        key = b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
-        encryptor = aes._AESEncryptor(key)
+        encryptor = aes._AESEncryptor(_default_key())
 
         _in = b'\x32\x43\xf6\xa8\x88\x5a\x30\x8d\x31\x31\x98\xa2\xe0\x37\x07\x34'
         out = b'\xb8\x22\xfe\x47\x6f\x13\xf2\xca\x82\x11\xed\x45\xe3\x37\x58\x82'
@@ -76,8 +63,7 @@ class TestAESEncryptorCipher(unittest.TestCase):
         self.assertEqual(out, encryptor.cipher(_in))
 
     def test_on_article_example(self):
-        key = b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
-        encryptor = aes._AESEncryptor(key)
+        encryptor = aes._AESEncryptor(_default_key())
 
         _in = b'\x32\x88\x31\xe0\x43\x5a\x31\x37\xf6\x30\x98\x07\xa8\x8d\xa2\x34'
         out = b'\x39\x02\xdc\x19\x25\xdc\x11\x6a\x84\x09\x85\x0b\x1d\xfb\x97\x32'
@@ -351,8 +337,8 @@ class TestAESEncryptorCipher(unittest.TestCase):
 
 class TestAESEncryptorInvCipher(unittest.TestCase):
     def test_inv_cipher(self):
-        key = b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
-        encryptor = aes._AESEncryptor(key)
+        encryptor = aes._AESEncryptor(_default_key())
+
         _in = b'\x32\x43\xf6\xa8\x88\x5a\x30\x8d\x31\x31\x98\xa2\xe0\x37\x07\x34'
         out = b'\xb8\x22\xfe\x47\x6f\x13\xf2\xca\x82\x11\xed\x45\xe3\x37\x58\x82'
 
@@ -362,7 +348,6 @@ class TestAESEncryptorInvCipher(unittest.TestCase):
 class TestAESEncryptorUtility(unittest.TestCase):
     def test_key_expansion(self):
         print(aes._str_to_bytes('2b7e1516'))
-        key = b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
         expected_round_keys = [
             [b'\x2b\x7e\x15\x16', b'\x28\xae\xd2\xa6', b'\xab\xf7\x15\x88', b'\x09\xcf\x4f\x3c'],
             [b'\xa0\xfa\xfe\x17', b'\x88\x54\x2c\xb1', b'\x23\xa3\x39\x39', b'\x2a\x6c\x76\x05'],
@@ -376,7 +361,7 @@ class TestAESEncryptorUtility(unittest.TestCase):
             [b'\xac\x77\x66\xf3', b'\x19\xfa\xdc\x21', b'\x28\xd1\x29\x41', b'\x57\x5c\x00\x6e'],
             [b'\xd0\x14\xf9\xa8', b'\xc9\xee\x25\x89', b'\xe1\x3f\x0c\xc8', b'\xb6\x63\x0c\xa6']
         ]
-        encryptor = aes._AESEncryptor(key)
+        encryptor = aes._AESEncryptor(_default_key())
         round_keys = encryptor._round_keys
         for i, round_key in enumerate(round_keys):
             for j, word in enumerate(round_key):
