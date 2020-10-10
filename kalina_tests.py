@@ -27,13 +27,42 @@ def _reverse(b: bytes):
     print(''.join([reversed_first_part, reversed_second_part]))
 
 
-def _default_key() -> bytes:
+def _default_key_128() -> bytes:
     return b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F'
 
 
-class KalinaEncryptionDecryptionTest(unittest.TestCase):
+def _default_key_256() -> bytes:
+    return b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F'
+
+
+class KalynaEncryptionDecryptionParametersTest(unittest.TestCase):
+    _plaintext = b'aaaaaaaaaaaaaaaaaaaa'
+
+    def test_block_size_128_key_length_128(self):
+        self._helper_test_block_size_key_length(128, 128)
+
+    def test_block_size_128_key_length_256(self):
+        self._helper_test_block_size_key_length(128, 256)
+
+    def test_block_size_256_key_length_256(self):
+        self._helper_test_block_size_key_length(256, 256)
+
+    def test_block_size_256_key_length_512(self):
+        self._helper_test_block_size_key_length(256, 512)
+
+    def test_block_size_512_key_length_512(self):
+        self._helper_test_block_size_key_length(512, 512)
+
+    def _helper_test_block_size_key_length(self, block_size, key_length):
+        algorithm = kalyna.Kalyna(block_size=block_size, key_length=key_length)
+        ciphertext = algorithm.encrypt(KalynaEncryptionDecryptionParametersTest._plaintext)
+        decrypted = algorithm.decrypt(ciphertext)
+        self.assertEqual(KalynaEncryptionDecryptionParametersTest._plaintext, decrypted)
+
+
+class KalynaEncryptionDecryptionTest(unittest.TestCase):
     def test_encrypt_decrypt(self):
-        algorithm = kalyna.Kalyna(block_size=128, key=_default_key())
+        algorithm = kalyna.Kalyna(block_size=128, key=_default_key_128())
 
         plaintext1 = b'aaaaaaaaaaaaaaaaaaaa'
         plaintext2 = b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
@@ -50,13 +79,13 @@ class KalinaEncryptionDecryptionTest(unittest.TestCase):
         self.assertEqual(plaintext6, algorithm.decrypt(algorithm.encrypt(plaintext6)))
 
     def test_encrypt_decrypt_loop(self):
-        algorithm = kalyna.Kalyna(block_size=128, key=_default_key())
+        algorithm = kalyna.Kalyna(block_size=128, key=_default_key_128())
         for plaintext_length in range(1, 100):
             plaintext = b'a' * plaintext_length
             self.assertEqual(plaintext, algorithm.decrypt(algorithm.encrypt(plaintext)))
 
 
-class KalinaEncryptorCipherTest(unittest.TestCase):
+class KalynaEncryptorCipherTest(unittest.TestCase):
     def test_kalyna_cipher(self):
         self.helper_test_kalyna_cipher(
             b'\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F',
@@ -64,14 +93,14 @@ class KalinaEncryptorCipherTest(unittest.TestCase):
         )
 
     def helper_test_kalyna_cipher(self, _in, expected_out):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
         self.assertEqual(expected_out, algorithm.cipher(_in))
 
 
-class KalinaEncryptorInvCipherTest(unittest.TestCase):
+class KalynaEncryptorInvCipherTest(unittest.TestCase):
     def test_kalyna_inv_cipher(self):
         self.helper_test_kalyna_inv_cipher(
-            _default_key(),
+            _default_key_128(),
             b'\x81\xBF\x1C\x7D\x77\x9B\xAC\x20\xE1\xC9\xEA\x39\xB4\xD2\xAD\x06',
             b'\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F'
         )
@@ -86,16 +115,16 @@ class KalinaEncryptorInvCipherTest(unittest.TestCase):
         self.assertEqual(expected_out, algorithm.inv_cipher(_in))
 
 
-class KalinaEncryptorCipherInvCipherTest(unittest.TestCase):
+class KalynaEncryptorCipherInvCipherTest(unittest.TestCase):
     def test_cipher_inv_cipher(self):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
         _in = b'Semen krasavchik'
         self.assertEqual(_in, algorithm.inv_cipher(algorithm.cipher(_in)))
 
 
-class KalinaEncryptorUtilityTest(unittest.TestCase):
-    def test_key_expansion(self):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+class KalynaEncryptorUtilityTest(unittest.TestCase):
+    def test_key_expansion_128_128(self):
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
 
         expected_keys = [
             b'\x16\x50\x5e\x6b\x9b\x3a\xb1\xe6\x86\x5b\x77\xdc\xe0\x82\xa0\xf4',
@@ -118,16 +147,53 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
             if len(expected_key[0]) > 0:
                 self.assertEqual(expected_key, actual_key)
 
-    def test_round_key_expand(self):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+    def test_key_expansion_128_256(self):
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_256())
+
+        expected_keys = [
+            b'\x57\xC8\x16\xEB\x3F\x7E\x12\xDE\xED\x2C\x6B\x56\xE6\xB5\xBE\x1A',
+            b'\xDE\xED\x2C\x6B\x56\xE6\xB5\xBE\x1A\x57\xC8\x16\xEB\x3F\x7E\x12',
+            b'\xD8\x06\x9A\x7D\x88\x9A\xCD\x80\xCD\x31\x84\x45\x6C\xCC\xAE\x6F',
+            b'\x80\xCD\x31\x84\x45\x6C\xCC\xAE\x6F\xD8\x06\x9A\x7D\x88\x9A\xCD',
+            b'\xC3\x61\xCC\x97\x35\x13\x41\x1A\x82\x32\x4D\x2B\x67\x42\xF3\xFE',
+            b'\x1A\x82\x32\x4D\x2B\x67\x42\xF3\xFE\xC3\x61\xCC\x97\x35\x13\x41',
+            b'\x83\x10\x69\x8C\x65\xCF\x80\xA4\x09\xEF\x6F\xAA\xBE\xB8\x0F\x56',
+            b'\xA4\x09\xEF\x6F\xAA\xBE\xB8\x0F\x56\x83\x10\x69\x8C\x65\xCF\x80',
+            b'\xC6\xD5\xC4\xC3\x81\x46\x1A\x7B\x03\x4D\x69\x18\x42\x90\x15\x10',
+            b'\x7B\x03\x4D\x69\x18\x42\x90\x15\x10\xC6\xD5\xC4\xC3\x81\x46\x1A',
+            b'\x84\xD0\xF8\x21\x46\xC8\xBD\xF9\xB2\xB3\x70\x7B\x4D\x49\x38\x7E',
+            b'\xF9\xB2\xB3\x70\x7B\x4D\x49\x38\x7E\x84\xD0\xF8\x21\x46\xC8\xBD',
+            b'\x43\xFA\xDB\x28\xA0\xD1\xD4\x2B\xBF\xF9\x2F\xF9\x79\x45\x46\xB3',
+            b'\x2B\xBF\xF9\x2F\xF9\x79\x45\x46\xB3\x43\xFA\xDB\x28\xA0\xD1\xD4',
+            b'\xC3\x1E\xE8\xA8\x7E\x2C\xED\x24\x5A\x21\xA4\x35\xFD\xB2\x5B\x92'
+        ]
+        self.assertEqual(len(expected_keys), len(algorithm._round_keys))
+
+        for key_index in range(len(expected_keys)):
+            print(f'key_index: {key_index}')
+            expected_key = kalyna._KalynaEncryptor._in_to_state(expected_keys[key_index])
+            actual_key = algorithm._round_keys[key_index]
+            if len(expected_key[0]) > 0:
+                self.assertEqual(expected_key, actual_key)
+
+    def test_round_key_expand_128(self):
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
 
         expected_kt = b'\x86\x2F\x1F\x65\x3B\x77\x5B\xA1\xD0\x5C\xBC\x2F\x38\xE2\xD8\x7D'
-        actual_kt = algorithm._key_expand_kt(_default_key())
+        actual_kt = algorithm._key_expand_kt(_default_key_128())
+
+        self.assertEqual(expected_kt, algorithm._state_to_out(actual_kt))
+
+    def test_round_key_expand_256(self):
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_256())
+
+        expected_kt = b'\x1F\x44\x77\x80\x2D\x36\x68\x59\x9A\x40\x15\x36\x52\x48\x2C\xBF'
+        actual_kt = algorithm._key_expand_kt(_default_key_256())
 
         self.assertEqual(expected_kt, algorithm._state_to_out(actual_kt))
 
     def test_rotate_left(self):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
 
         _in = b'\x16\x50\x5e\x6b\x9b\x3a\xb1\xe6\x86\x5b\x77\xdc\xe0\x82\xa0\xf4'
         expected_out = b'\xe6\x86\x5b\x77\xdc\xe0\x82\xa0\xf4\x16\x50\x5e\x6b\x9b\x3a\xb1'
@@ -170,7 +236,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
                          0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
 
     def test_in_to_state(self):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
         _in = b'\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F'
         expected_state = [
             [0x10, 0x18],
@@ -185,7 +251,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
         self.assertEqual(expected_state, algorithm._in_to_state(_in))
 
     def test_state_to_out(self):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
         state = [
             [0x10, 0x18],
             [0x11, 0x19],
@@ -210,7 +276,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
                                               state_bytes: bytes,
                                               round_key_bytes: bytes,
                                               expected_out_bytes: bytes):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
 
         state = algorithm._in_to_state(state_bytes)
         round_key = algorithm._in_to_state(round_key_bytes)
@@ -230,7 +296,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
                                                    state_bytes: bytes,
                                                    round_key_bytes: bytes,
                                                    expected_out_bytes: bytes):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
 
         state = algorithm._in_to_state(state_bytes)
         round_key = algorithm._in_to_state(round_key_bytes)
@@ -240,7 +306,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
         self.assertEqual(expected_out_bytes, algorithm._state_to_out(state))
 
     def test_right_circular_shift(self):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
         _in = b'\x9A\x2B\x1E\xAC\x76\xEE\x89\x1B\x91\x4A\xCF\x17\x7C\x98\xDD\x3D'
         _expected_out = b'\x9A\x2B\x1E\xAC\x7C\x98\xDD\x3D\x91\x4A\xCF\x17\x76\xEE\x89\x1B'
         state = algorithm._in_to_state(_in)
@@ -248,7 +314,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
         self.assertEqual(_expected_out, algorithm._state_to_out(state))
 
     def test_left_circular_shift(self):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
         _in = b'\x9A\x2B\x1E\xAC\x7C\x98\xDD\x3D\x91\x4A\xCF\x17\x76\xEE\x89\x1B'
         _expected_out = b'\x9A\x2B\x1E\xAC\x76\xEE\x89\x1B\x91\x4A\xCF\x17\x7C\x98\xDD\x3D'
         state = algorithm._in_to_state(_in)
@@ -266,7 +332,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
         )
 
     def helper_test_linear_transformation_over_finite_field(self, _in: bytes, expected_out: bytes):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
         state = algorithm._in_to_state(_in)
         algorithm._linear_transformation_over_finite_field(state)
         out = algorithm._state_to_out(state)
@@ -283,7 +349,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
         )
 
     def helper_test_inverse_linear_transformation_over_finite_field(self, _in: bytes, expected_out: bytes):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
         state = algorithm._in_to_state(_in)
         algorithm._inv_linear_transformation_over_finite_field(state)
         out = algorithm._state_to_out(state)
@@ -309,7 +375,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
         self.assertEqual((7, 1), kalyna._KalynaEncryptor._state_indices(state, 7, 1))
 
     def test_non_linear_bijective_mapping(self):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
         _in = b'\x26\x61\x70\x7E\xAF\x4F\xC7\xFD\x9E\x74\x91\xF7\xFC\x9F\xBE\x13'
         _expected_out = b'\x9A\x2B\x1E\xAC\x76\xEE\x89\x1B\x91\x4A\xCF\x17\x7C\x98\xDD\x3D'
         state = algorithm._in_to_state(_in)
@@ -317,7 +383,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
         self.assertEqual(_expected_out, algorithm._state_to_out(state))
 
     def test_inv_non_linear_bijective_mapping(self):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
         _in = b'\x9A\x2B\x1E\xAC\x76\xEE\x89\x1B\x91\x4A\xCF\x17\x7C\x98\xDD\x3D'
         _expected_out = b'\x26\x61\x70\x7E\xAF\x4F\xC7\xFD\x9E\x74\x91\xF7\xFC\x9F\xBE\x13'
         state = algorithm._in_to_state(_in)
@@ -337,7 +403,7 @@ class KalinaEncryptorUtilityTest(unittest.TestCase):
         )
 
     def helper_test_add_round_key_modulo_2(self, state_bytes: bytes, key_bytes: bytes, expected_out: bytes):
-        algorithm = kalyna._KalynaEncryptor(128, _default_key())
+        algorithm = kalyna._KalynaEncryptor(128, _default_key_128())
         state = algorithm._in_to_state(state_bytes)
         key = algorithm._in_to_state(key_bytes)
         algorithm._add_round_key_modulo_2(state, key)

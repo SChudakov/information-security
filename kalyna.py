@@ -18,11 +18,9 @@ def _print_state(state: _State):
 
 def _state_to_str(state: _State):
     bytes_str = _bytes_to_string(_KalynaEncryptor._state_to_out(state))
-    first_part = bytes_str[:len(bytes_str) // 2]
-    reversed_first_part = ''.join(reversed([first_part[i:i + 2] for i in range(0, len(first_part), 2)]))
-    second_part = bytes_str[len(bytes_str) // 2:]
-    reversed_second_part = ''.join(reversed([second_part[i:i + 2] for i in range(0, len(second_part), 2)]))
-    return '  '.join([reversed_first_part, reversed_second_part])
+    parts = [bytes_str[i:i + 16] for i in range(0, len(bytes_str), 16)]
+    reversed_parts = [''.join(reversed([part[i:i + 2] for i in range(0, len(part), 2)])) for part in parts]
+    return ' '.join(reversed_parts)
 
 
 class Kalyna:
@@ -286,9 +284,10 @@ class _KalynaEncryptor:
             k1 = [[key_state[i][j] for j in range(len(key_state[i]))] for i in range(len(key_state))]
         else:
             k0 = [[key_state[i][j] for j in range(len(key_state[i]) // 2)] for i in range(len(key_state))]
-            k1 = [[key_state[i][j] for j in range(len(key_state[i]) // 2 + 1, len(key_state[i]))] for i in
+            k1 = [[key_state[i][j] for j in range(len(key_state[i]) // 2, len(key_state[i]))] for i in
                   range(len(key_state))]
 
+        _state_to_str(k0)
         self._add_round_key_expand(k0, kt)
 
         self._non_linear_bijective_mapping(kt)
@@ -322,12 +321,12 @@ class _KalynaEncryptor:
         round = 0
 
         while True:
-            current_key = [[kt[i][j] for j in range(len(kt[i]))] for i in range(len(kt))]
+            current_key = [[kt[i][j] for j in range(self._nb)] for i in range(len(kt))]
 
             self._add_round_key_expand(tmv, current_key)
-            kt_round = [[current_key[i][j] for j in range(len(current_key[i]))] for i in range(len(current_key))]
+            kt_round = [[current_key[i][j] for j in range(self._nb)] for i in range(len(current_key))]
 
-            current_key = [[initial_data[i][j] for j in range(len(initial_data[i]))] for i in range(len(initial_data))]
+            current_key = [[initial_data[i][j] for j in range(self._nb)] for i in range(len(initial_data))]
 
             self._add_round_key_expand(kt_round, current_key)
 
@@ -343,7 +342,7 @@ class _KalynaEncryptor:
 
             self._add_round_key_expand(kt_round, current_key)
 
-            self._round_keys[round] = [[current_key[i][j] for j in range(len(current_key[i]))] for i in
+            self._round_keys[round] = [[current_key[i][j] for j in range(self._nb)] for i in
                                        range(len(current_key))]
 
             if self._nr == round:
@@ -354,11 +353,11 @@ class _KalynaEncryptor:
 
                 self._shift_left(self._nb, tmv)
 
-                current_key = [[kt[i][j] for j in range(len(kt[i]))] for i in range(len(kt))]
+                current_key = [[kt[i][j] for j in range(self._nb)] for i in range(len(kt))]
                 self._add_round_key_expand(tmv, current_key)
-                kt_round = [[current_key[i][j] for j in range(len(current_key[i]))] for i in range(len(current_key))]
+                kt_round = [[current_key[i][j] for j in range(self._nb)] for i in range(len(current_key))]
 
-                current_key = [[initial_data[i][j] for j in range(len(initial_data[i]) // 2 + 1, len(initial_data[i]))]
+                current_key = [[initial_data[i][j] for j in range(len(initial_data[i]) // 2, len(initial_data[i]))]
                                for i in range(len(initial_data))]
 
                 self._add_round_key_expand(kt_round, current_key)
@@ -454,12 +453,12 @@ class _KalynaEncryptor:
 
         self._add_round_key_modulo_2_64(state, self._round_keys[0])
 
-        for ound in range(1, self._nr):
+        for round in range(1, self._nr):
             self._non_linear_bijective_mapping(state)
             self._right_circular_shift(state)
             self._linear_transformation_over_finite_field(state)
 
-            self._add_round_key_modulo_2(state, self._round_keys[ound])
+            self._add_round_key_modulo_2(state, self._round_keys[round])
 
         self._non_linear_bijective_mapping(state)
         self._right_circular_shift(state)
@@ -579,25 +578,12 @@ class _KalynaEncryptor:
     @staticmethod
     def _multiply_by_matrix(state: _State, matrix: _State) -> None:
         result = [[0] * len(state[0]) for _ in range(len(state))]
-        # print()
-        # print('before multiplication')
-        # _print_state(state)
         for column in range(len(state[0])):
             for row in reversed(range(8)):
                 product = 0
                 for b in reversed(range(8)):
-                    # i, j = _KalynaEncryptor._state_indices(state, b, column)
-                    # indices = (b, column, row, b)
-                    # values = hex(state[b][column]), hex(matrix[row][b])
-                    # multiplied = hex(_KalynaEncryptor._galois_multiplication(state[b][column], matrix[row][b]))
                     product ^= _KalynaEncryptor._galois_multiplication(state[b][column], matrix[row][b])
-                    # product_hex = hex(product)
-                    # product
-                # i, j = _KalynaEncryptor._state_indices(state, row, column)
                 result[row][column] = product
-        # print()
-        # print('after multiplication')
-        # _print_state(state)
         for i in range(len(state)):
             for j in range(len(state[0])):
                 state[i][j] = result[i][j]

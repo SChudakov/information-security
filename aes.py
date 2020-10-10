@@ -163,45 +163,17 @@ class _AESEncryptor:
         assert len(_in) == self._Nb * self._Nb
         state = self._in_to_state(_in)
 
-        # print('initial state')
-        # _print_state(state)
-
         self._add_round_key(state, self._round_keys[0])
-        # print('zero round key')
-        # _print_state(self._round_keys[0])
-        # print('after add round key')
-        # _print_state(state)
-        # print()
-        # print()
 
         for round in range(1, self._Nr):
             self._sub_bytes(state)
-            # print('after substituting bytes')
-            # _print_state(state)
             self._shift_rows(state)
-            # print('after shift rows')
-            # _print_state(state)
             self._mix_columns(state, False)
-            # print('after mix columns')
-            # _print_state(state)
             self._add_round_key(state, self._round_keys[round])
-            # print('after adding round key')
-            # _print_state(state)
 
-            # print()
-            # print()
-            # print()
-
-        # print('final round')
         self._sub_bytes(state)
-        # print('after substituting bytes')
-        # _print_state(state)
         self._shift_rows(state)
-        # print('after shift rows')
-        # _print_state(state)
         self._add_round_key(state, self._round_keys[-1])
-        # print('after adding round key')
-        # _print_state(state)
 
         return _AESEncryptor._state_to_out(state)
 
@@ -210,41 +182,17 @@ class _AESEncryptor:
 
         state = self._in_to_state(_in)
 
-        # print()
-        # print('initial state')
-        # _print_state(state)
-
         self._add_round_key(state, self._round_keys[-1])
-        # print('after adding round key')
-        # _print_state(state)
         self._inv_shift_rows(state)
-        # print('after shifting rows')
-        # _print_state(state)
         self._inv_sub_bytes(state)
-        # print('after substituting bytes')
-        # _print_state(state)
-        # print()
-        # print()
 
         for round in reversed(range(1, self._Nr)):
             self._add_round_key(state, self._round_keys[round])
-            # print('after adding round key')
-            # _print_state(state)
             self._mix_columns(state, True)
-            # print('after mixing columns')
-            # _print_state(state)
             self._inv_shift_rows(state)
-            # print('after shifting rows')
-            # _print_state(state)
             self._inv_sub_bytes(state)
-            # print('after substituting bytes')
-            # _print_state(state)
-            # print()
-            # print()
 
         self._add_round_key(state, self._round_keys[0])
-        # print('final state')
-        # _print_state(state)
 
         return _AESEncryptor._state_to_out(state)
 
@@ -295,10 +243,11 @@ class _AESEncryptor:
     def _galois_multiplication(a, b):
         p = 0
         for counter in range(8):
-            if b & 1: p ^= a
+            if b & 1:
+                p ^= a
             hi_bit_set = a & 0x80
             a <<= 1
-            a &= 0xFF
+            a &= 0xff
             if hi_bit_set:
                 a ^= 0x1b
             b >>= 1

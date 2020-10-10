@@ -6,11 +6,30 @@ def _default_key() -> bytes:
     return b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
 
 
+class TestEncryptDecryptKeyLength(unittest.TestCase):
+    _plaintext = b'The Advanced Encryption Standard Rijndael (AES), also known by its original name (Dutch pronunciation),[3] is a specification for the encryption of electronic data established by the U.S. National Institute of Standards and Technology (NIST) in 2001'
+
+    def test_128_bits(self):
+        self._helper_test_key_length(128)
+
+    def test_192_bits(self):
+        self._helper_test_key_length(192)
+
+    def test_256_bits(self):
+        self._helper_test_key_length(256)
+
+    def _helper_test_key_length(self, key_length):
+        algorithm = aes.AES(key_length=key_length)
+        ciphertext = algorithm.encrypt(TestEncryptDecryptKeyLength._plaintext)
+        plaintext = algorithm.decrypt(ciphertext)
+        self.assertEqual(TestEncryptDecryptKeyLength._plaintext, plaintext)
+
+
 class TestAESEncryptDecrypt(unittest.TestCase):
     def test_encrypt_decrypt(self):
         algorithm = aes.AES(key=_default_key())
         plaintext1 = b''
-        plaintext2 = b'Semen krasavchik'
+        plaintext2 = b'aaaaaaaaaaaaaaaa'
         plaintext3 = b'The Advanced Encryption Standard Rijndael (AES), also known by its original name (Dutch pronunciation),[3] is a specification for the encryption of electronic data established by the U.S. National Institute of Standards and Technology (NIST) in 2001'
 
         self.assertEqual(plaintext1, algorithm.decrypt(algorithm.encrypt(plaintext1)))
