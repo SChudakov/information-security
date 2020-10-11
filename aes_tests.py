@@ -6,6 +6,10 @@ def _default_key() -> bytes:
     return b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
 
 
+def _default_iv() -> bytes:
+    return b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
+
+
 class TestEncryptDecryptKeyLength(unittest.TestCase):
     _plaintext = b'The Advanced Encryption Standard Rijndael (AES), also known by its original name (Dutch pronunciation),[3] is a specification for the encryption of electronic data established by the U.S. National Institute of Standards and Technology (NIST) in 2001'
 
@@ -26,21 +30,76 @@ class TestEncryptDecryptKeyLength(unittest.TestCase):
 
 
 class TestAESEncryptDecrypt(unittest.TestCase):
+    _tests = [
+        b'',
+        b'aaaaaaaaaaaaaaaa',
+        b'The Advanced Encryption Standard Rijndael (AES), also known by its original name (Dutch pronunciation),'
+        b'[3] is a specification for the encryption of electronic data established by the U.S. National Institute of '
+        b'Standards and Technology (NIST) in 2001 '
+    ]
+
+    def test_encrypt_decrypt_cbc(self):
+        algorithm = aes.AES(key=_default_key())
+        self._helper_test_encrypt_decrypt(algorithm.encrypt_cbc, algorithm.decrypt_cbc, _default_iv())
+
+    def test_encrypt_decrypt_loop_cbc(self):
+        algorithm = aes.AES(key=_default_key())
+        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt_cbc, algorithm.decrypt_cbc, _default_iv())
+
+    def test_encrypt_decrypt_pcbc(self):
+        algorithm = aes.AES(key=_default_key())
+        self._helper_test_encrypt_decrypt(algorithm.encrypt_pcbc, algorithm.decrypt_pcbc, _default_iv())
+
+    def test_encrypt_decrypt_loop_pcbc(self):
+        algorithm = aes.AES(key=_default_key())
+        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt_pcbc, algorithm.decrypt_pcbc, _default_iv())
+
+    def test_encrypt_decrypt_cfb(self):
+        algorithm = aes.AES(key=_default_key())
+        self._helper_test_encrypt_decrypt(algorithm.encrypt_cfb, algorithm.decrypt_cfb, _default_iv())
+
+    def test_encrypt_decrypt_loop_cfb(self):
+        algorithm = aes.AES(key=_default_key())
+        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt_cfb, algorithm.decrypt_cfb, _default_iv())
+
+    def test_encrypt_decrypt_ofb(self):
+        algorithm = aes.AES(key=_default_key())
+        self._helper_test_encrypt_decrypt(algorithm.encrypt_ofb, algorithm.decrypt_ofb, _default_iv())
+
+    def test_encrypt_decrypt_loop_ofb(self):
+        algorithm = aes.AES(key=_default_key())
+        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt_ofb, algorithm.decrypt_ofb, _default_iv())
+
+    def test_encrypt_decrypt_ctr(self):
+        algorithm = aes.AES(key=_default_key())
+        self._helper_test_encrypt_decrypt(algorithm.encrypt_ctr, algorithm.decrypt_ctr, _default_iv())
+
+    def test_encrypt_decrypt_loop_ctr(self):
+        algorithm = aes.AES(key=_default_key())
+        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt_ctr, algorithm.decrypt_ctr, _default_iv())
+
     def test_encrypt_decrypt(self):
         algorithm = aes.AES(key=_default_key())
-        plaintext1 = b''
-        plaintext2 = b'aaaaaaaaaaaaaaaa'
-        plaintext3 = b'The Advanced Encryption Standard Rijndael (AES), also known by its original name (Dutch pronunciation),[3] is a specification for the encryption of electronic data established by the U.S. National Institute of Standards and Technology (NIST) in 2001'
-
-        self.assertEqual(plaintext1, algorithm.decrypt(algorithm.encrypt(plaintext1)))
-        self.assertEqual(plaintext2, algorithm.decrypt(algorithm.encrypt(plaintext2)))
-        self.assertEqual(plaintext3, algorithm.decrypt(algorithm.encrypt(plaintext3)))
+        self._helper_test_encrypt_decrypt(algorithm.encrypt, algorithm.decrypt)
 
     def test_encrypt_decrypt_loop(self):
         algorithm = aes.AES(key=_default_key())
+        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt, algorithm.decrypt)
+
+    def _helper_test_encrypt_decrypt(self, encrypt_func, decrypt_func, iv=None):
+        for plaintext in self._tests:
+            if iv is None:
+                self.assertEqual(plaintext, decrypt_func(encrypt_func(plaintext)))
+            else:
+                self.assertEqual(plaintext, decrypt_func(encrypt_func(plaintext, iv), iv))
+
+    def _helper_test_encrypt_decrypt_loop(self, encrypt_func, decrypt_func, iv=None):
         for plaintext_length in range(1, 100):
             plaintext = b'a' * plaintext_length
-            self.assertEqual(plaintext, algorithm.decrypt(algorithm.encrypt(plaintext)))
+            if iv is None:
+                self.assertEqual(plaintext, decrypt_func(encrypt_func(plaintext)))
+            else:
+                self.assertEqual(plaintext, decrypt_func(encrypt_func(plaintext, iv), iv))
 
 
 class TestAESUtility(unittest.TestCase):

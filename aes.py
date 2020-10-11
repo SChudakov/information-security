@@ -30,6 +30,139 @@ class AES:
 
         self._encryptor = _AESEncryptor(self._K)
 
+    def encrypt_cbc(self, plaintext: bytes, iv: bytes) -> bytes:
+        assert len(iv) == 16
+
+        plaintext = self._pad(plaintext)
+
+        blocks = []
+        previous = iv
+        for plaintext_block in self._split_blocks(plaintext):
+            block = self._encryptor.cipher(self._xor_bytes(plaintext_block, previous))
+            blocks.append(block)
+            previous = block
+
+        return b''.join(blocks)
+
+    def decrypt_cbc(self, ciphertext: bytes, iv: bytes) -> bytes:
+        assert len(iv) == 16
+
+        blocks = []
+        previous = iv
+        for ciphertext_block in self._split_blocks(ciphertext):
+            blocks.append(self._xor_bytes(previous, self._encryptor.inv_cipher(ciphertext_block)))
+            previous = ciphertext_block
+
+        return self._unpad(b''.join(blocks))
+
+    def encrypt_pcbc(self, plaintext: bytes, iv: bytes) -> bytes:
+        assert len(iv) == 16
+
+        plaintext = self._pad(plaintext)
+
+        blocks = []
+        prev_ciphertext = iv
+        prev_plaintext = bytes(16)
+        for plaintext_block in self._split_blocks(plaintext):
+            ciphertext_block = self._encryptor.cipher(
+                self._xor_bytes(plaintext_block, self._xor_bytes(prev_ciphertext, prev_plaintext))
+            )
+            blocks.append(ciphertext_block)
+            prev_ciphertext = ciphertext_block
+            prev_plaintext = plaintext_block
+
+        return b''.join(blocks)
+
+    def decrypt_pcbc(self, ciphertext: bytes, iv: bytes) -> bytes:
+        assert len(iv) == 16
+
+        blocks = []
+        prev_ciphertext = iv
+        prev_plaintext = bytes(16)
+        for ciphertext_block in self._split_blocks(ciphertext):
+            plaintext_block = self._xor_bytes(
+                self._xor_bytes(prev_ciphertext, prev_plaintext), self._encryptor.inv_cipher(ciphertext_block)
+            )
+            blocks.append(plaintext_block)
+            prev_ciphertext = ciphertext_block
+            prev_plaintext = plaintext_block
+
+        return self._unpad(b''.join(blocks))
+
+    def encrypt_cfb(self, plaintext: bytes, iv: bytes) -> bytes:
+        assert len(iv) == 16
+
+        blocks = []
+        prev_ciphertext = iv
+        for plaintext_block in self._split_blocks(plaintext, require_padding=False):
+            ciphertext_block = self._xor_bytes(plaintext_block, self._encryptor.cipher(prev_ciphertext))
+            blocks.append(ciphertext_block)
+            prev_ciphertext = ciphertext_block
+
+        return b''.join(blocks)
+
+    def decrypt_cfb(self, ciphertext: bytes, iv: bytes) -> bytes:
+        assert len(iv) == 16
+
+        blocks = []
+        prev_ciphertext = iv
+        for ciphertext_block in self._split_blocks(ciphertext, require_padding=False):
+            plaintext_block = self._xor_bytes(ciphertext_block, self._encryptor.cipher(prev_ciphertext))
+            blocks.append(plaintext_block)
+            prev_ciphertext = ciphertext_block
+
+        return b''.join(blocks)
+
+    def encrypt_ofb(self, plaintext: bytes, iv: bytes) -> bytes:
+        assert len(iv) == 16
+
+        blocks = []
+        previous = iv
+        for plaintext_block in self._split_blocks(plaintext, require_padding=False):
+            block = self._encryptor.cipher(previous)
+            ciphertext_block = self._xor_bytes(plaintext_block, block)
+            blocks.append(ciphertext_block)
+            previous = block
+
+        return b''.join(blocks)
+
+    def decrypt_ofb(self, ciphertext: bytes, iv: bytes) -> bytes:
+        assert len(iv) == 16
+
+        blocks = []
+        previous = iv
+        for ciphertext_block in self._split_blocks(ciphertext, require_padding=False):
+            block = self._encryptor.cipher(previous)
+            plaintext_block = self._xor_bytes(ciphertext_block, block)
+            blocks.append(plaintext_block)
+            previous = block
+
+        return b''.join(blocks)
+
+    def encrypt_ctr(self, plaintext: bytes, iv: bytes) -> bytes:
+        assert len(iv) == 16
+
+        blocks = []
+        nonce = iv
+        for plaintext_block in self._split_blocks(plaintext, require_padding=False):
+            block = self._xor_bytes(plaintext_block, self._encryptor.cipher(nonce))
+            blocks.append(block)
+            nonce = self._inc_bytes(nonce)
+
+        return b''.join(blocks)
+
+    def decrypt_ctr(self, ciphertext: bytes, iv: bytes) -> bytes:
+        assert len(iv) == 16
+
+        blocks = []
+        nonce = iv
+        for ciphertext_block in self._split_blocks(ciphertext, require_padding=False):
+            block = self._xor_bytes(ciphertext_block, self._encryptor.cipher(nonce))
+            blocks.append(block)
+            nonce = self._inc_bytes(nonce)
+
+        return b''.join(blocks)
+
     def encrypt(self, plaintext: bytes) -> bytes:
         plaintext = self._pad(plaintext)
 
@@ -66,10 +199,25 @@ class AES:
         return ciphertext
 
     @staticmethod
-    def _split_blocks(plaintext: bytes) -> List[bytes]:
+    def _split_blocks(plaintext: bytes, require_padding=True) -> List[bytes]:
         block_size = 16
-        assert len(plaintext) > 0 and len(plaintext) % block_size == 0
+        assert (len(plaintext) > 0 and len(plaintext) % block_size == 0) or not require_padding
         return [plaintext[i:i + block_size] for i in range(0, len(plaintext), block_size)]
+
+    @staticmethod
+    def _xor_bytes(a: bytes, b: bytes) -> bytes:
+        return bytes(i ^ j for i, j in zip(a, b))
+
+    @staticmethod
+    def _inc_bytes(a: bytes):
+        out = list(a)
+        for i in reversed(range(len(out))):
+            if out[i] == 0xFF:
+                out[i] = 0
+            else:
+                out[i] += 1
+                break
+        return bytes(out)
 
 
 class _AESEncryptor:
