@@ -23,7 +23,7 @@ class TestEncryptDecryptKeyLength(unittest.TestCase):
         self._helper_test_key_length(256)
 
     def _helper_test_key_length(self, key_length):
-        algorithm = aes.AES(key_length=key_length)
+        algorithm = aes.AES_ECB(key_length=key_length)
         ciphertext = algorithm.encrypt(TestEncryptDecryptKeyLength._plaintext)
         plaintext = algorithm.decrypt(ciphertext)
         self.assertEqual(TestEncryptDecryptKeyLength._plaintext, plaintext)
@@ -79,11 +79,11 @@ class TestAESEncryptDecrypt(unittest.TestCase):
         self._helper_test_encrypt_decrypt_loop(algorithm, _default_iv())
 
     def test_encrypt_decrypt(self):
-        algorithm = aes.AES(key=_default_key())
+        algorithm = aes.AES_ECB(key=_default_key())
         self._helper_test_encrypt_decrypt(algorithm)
 
     def test_encrypt_decrypt_loop(self):
-        algorithm = aes.AES(key=_default_key())
+        algorithm = aes.AES_ECB(key=_default_key())
         self._helper_test_encrypt_decrypt_loop(algorithm)
 
     def _helper_test_encrypt_decrypt(self, encryptor, iv=None):
@@ -104,30 +104,30 @@ class TestAESEncryptDecrypt(unittest.TestCase):
 
 class TestAESUtility(unittest.TestCase):
     def test_pad(self):
-        self.assertEqual(16, len(aes.AES._pad(b'')))
-        self.assertEqual(16, len(aes.AES._pad(b'a')))
-        self.assertEqual(16, len(aes.AES._pad(b'aaaaaaaaaaaaaaaa')))
-        self.assertEqual(32, len(aes.AES._pad(b'aaaaaaaaaaaaaaaaa')))
+        self.assertEqual(16, len(aes.AES_ECB._pad(b'')))
+        self.assertEqual(16, len(aes.AES_ECB._pad(b'a')))
+        self.assertEqual(16, len(aes.AES_ECB._pad(b'aaaaaaaaaaaaaaaa')))
+        self.assertEqual(32, len(aes.AES_ECB._pad(b'aaaaaaaaaaaaaaaaa')))
 
     def test_unpad(self):
-        self.assertEqual(b'', aes.AES._unpad(b'\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10'))
-        self.assertEqual(b'a', aes.AES._unpad(b'a\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f'))
-        self.assertEqual(b'aaaaaaaaaaaaaaaa', aes.AES._unpad(b'aaaaaaaaaaaaaaaa'))
+        self.assertEqual(b'', aes.AES_ECB._unpad(b'\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10\x10'))
+        self.assertEqual(b'a', aes.AES_ECB._unpad(b'a\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f\x0f'))
+        self.assertEqual(b'aaaaaaaaaaaaaaaa', aes.AES_ECB._unpad(b'aaaaaaaaaaaaaaaa'))
         with self.assertRaises(AssertionError):
-            aes.AES._unpad(b'aaaaaaaaaaaaaaaaa')
+            aes.AES_ECB._unpad(b'aaaaaaaaaaaaaaaaa')
 
     def test_split_blocks(self):
-        self.assertEqual(1, len(aes.AES._split_blocks(b'aaaaaaaaaaaaaaaa')))
-        self.assertEqual(16, len(aes.AES._split_blocks(b'aaaaaaaaaaaaaaaa')[0]))
-        self.assertEqual(2, len(aes.AES._split_blocks(b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')))
-        self.assertEqual(16, len(aes.AES._split_blocks(b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')[0]))
-        self.assertEqual(16, len(aes.AES._split_blocks(b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')[1]))
+        self.assertEqual(1, len(aes.AES_ECB._split_blocks(b'aaaaaaaaaaaaaaaa')))
+        self.assertEqual(16, len(aes.AES_ECB._split_blocks(b'aaaaaaaaaaaaaaaa')[0]))
+        self.assertEqual(2, len(aes.AES_ECB._split_blocks(b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')))
+        self.assertEqual(16, len(aes.AES_ECB._split_blocks(b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')[0]))
+        self.assertEqual(16, len(aes.AES_ECB._split_blocks(b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')[1]))
         with self.assertRaises(AssertionError):
-            aes.AES._split_blocks(b'')
+            aes.AES_ECB._split_blocks(b'')
         with self.assertRaises(AssertionError):
-            aes.AES._split_blocks(b'a')
+            aes.AES_ECB._split_blocks(b'a')
         with self.assertRaises(AssertionError):
-            aes.AES._split_blocks(b'aaaaaaaaaaaaaaaaa')
+            aes.AES_ECB._split_blocks(b'aaaaaaaaaaaaaaaaa')
 
 
 class TestAESEncryptorCipher(unittest.TestCase):

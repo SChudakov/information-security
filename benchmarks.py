@@ -46,7 +46,7 @@ content_1mb = _load_file("1mb")
 # content_1gb = _load_file("1gb")
 
 
-def _benchmark_aes():
+def _benchmark_aes_ecb():
     cProfile.run('benchmark_encrypt(content_1kb, aes.AES(key_length=128))')
     cProfile.run('benchmark_encrypt(content_1mb, aes.AES(key_length=128))')
     cProfile.run('benchmark_encrypt(content_1gb, aes.AES(key_length=128))')
@@ -129,12 +129,12 @@ def _benchmark_salsa20():
 
 
 if __name__ == '__main__':
-    # _benchmark_aes()
-    # _benchmark_kalyna()
-    # _benchmark_aes_cbc()
-    # _benchmark_aes_pcbc()
-    # _benchmark_aes_cfb()
-    # _benchmark_aes_ofb()
-    # _benchmark_aes_ctr()
+    _benchmark_aes_ecb()
+    _benchmark_kalyna()
+    _benchmark_aes_cbc()
+    _benchmark_aes_pcbc()
+    _benchmark_aes_cfb()
+    _benchmark_aes_ofb()
+    _benchmark_aes_ctr()
     _benchmark_rc4()
-    # _benchmark_salsa20()
+    _benchmark_salsa20()

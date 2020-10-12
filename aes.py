@@ -71,7 +71,7 @@ class _BaseAES:
         return bytes(out)
 
 
-class AES(_BaseAES):
+class AES_ECB(_BaseAES):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
