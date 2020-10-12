@@ -7,8 +7,10 @@ class RC4:
         self._S = RC4._key_scheduling_algorithm(key)
         self._encryptor = RC4._pseudo_random_generation_algorithm(self._S)
 
-    def transform(self, text: bytes):
+    def encrypt(self, text: bytes):
         return bytes([byte ^ next(self._encryptor) for byte in text])
+
+    decrypt = encrypt
 
     @staticmethod
     def _key_scheduling_algorithm(key) -> List[int]:

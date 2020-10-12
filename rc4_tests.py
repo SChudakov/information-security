@@ -35,8 +35,8 @@ class RC4Test(unittest.TestCase):
         encryptor = rc4.RC4(key)
         decryptor = rc4.RC4(key)
 
-        encrypted = encryptor.transform(plaintext)
-        decrypted = decryptor.transform(encrypted)
+        encrypted = encryptor.encrypt(plaintext)
+        decrypted = decryptor.encrypt(encrypted)
 
         self.assertEqual(ciphertext, encrypted)
         self.assertEqual(plaintext, decrypted)

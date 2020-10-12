@@ -2,8 +2,17 @@ import os.path
 import cProfile
 import aes
 import kalyna
+import rc4
+import salsa20
 
 _data_dir = './data'
+_iv = b'\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
+_key = b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
+_salsa_key = b'\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c\x2b\x7e\x15\x16\x28\xae\xd2\xa6\xab\xf7\x15\x88\x09\xcf\x4f\x3c'
+
+_nonce = bytes([3, 1, 4, 1, 5, 9, 2, 6])
+_block_counter = bytes([7, 0, 0, 0, 0, 0, 0, 0])
+_rounds = 20
 
 
 def _load_file(file_name: str):
@@ -16,12 +25,18 @@ def _write_file(file_name: str, content: bytes):
         write_file.write(content)
 
 
-def benchmark_encrypt(content, algorithm):
-    _ = algorithm.encrypt(content)
+def benchmark_encrypt(content, algorithm, iv=None):
+    if iv is None:
+        _ = algorithm.encrypt(content)
+    else:
+        _ = algorithm.encrypt(content, iv)
 
 
-def benchmark_decrypt(content, algorithm):
-    _ = algorithm.decrypt(content)
+def benchmark_decrypt(content, algorithm, iv=None):
+    if iv is None:
+        _ = algorithm.decrypt(content)
+    else:
+        _ = algorithm.decrypt(content, iv)
 
 
 content_1kb = _load_file("1kb")
@@ -31,26 +46,95 @@ content_1mb = _load_file("1mb")
 # content_1gb = _load_file("1gb")
 
 
-def main():
-    # ---------------    AES  -------------------------------------
-    # cProfile.run('benchmark_encrypt(content_1kb, aes.AES(key_length=128))')
-    # cProfile.run('benchmark_encrypt(content_1mb, aes.AES(key_length=128))')
-    # cProfile.run('benchmark_encrypt(content_1gb, aes.AES(key_length=128))')
+def _benchmark_aes():
+    cProfile.run('benchmark_encrypt(content_1kb, aes.AES(key_length=128))')
+    cProfile.run('benchmark_encrypt(content_1mb, aes.AES(key_length=128))')
+    cProfile.run('benchmark_encrypt(content_1gb, aes.AES(key_length=128))')
 
-    # cProfile.run('benchmark_decrypt(content_1kb, aes.AES(key_length=128))')
-    # cProfile.run('benchmark_decrypt(content_1mb, aes.AES(key_length=128))')
-    # cProfile.run('benchmark_decrypt(content_1gb, aes.AES(key_length=128))')
+    cProfile.run('benchmark_decrypt(content_1kb, aes.AES(key_length=128))')
+    cProfile.run('benchmark_decrypt(content_1mb, aes.AES(key_length=128))')
+    cProfile.run('benchmark_decrypt(content_1gb, aes.AES(key_length=128))')
 
-    # ---------------    Kalyna  -----------------------------------
 
+def _benchmark_aes_cbc():
+    cProfile.run('benchmark_encrypt(content_1kb, aes.AES_CBC(block_size=128, key_length=128), _iv)')
+    cProfile.run('benchmark_encrypt(content_1mb, aes.AES_CBC(block_size=128, key_length=128), _iv)')
+    # cProfile.run('benchmark_encrypt(content_1gb, aes.AES_CBC(block_size=128, key_length=128), _iv)')
+
+    cProfile.run('benchmark_decrypt(content_1kb, aes.AES_CBC(block_size=128, key_length=128), _iv)')
+    cProfile.run('benchmark_decrypt(content_1mb, aes.AES_CBC(block_size=128, key_length=128), _iv)')
+    # cProfile.run('benchmark_decrypt(content_1gb, aes.AES_CBC(block_size=128, key_length=128), _iv)')
+
+
+def _benchmark_aes_pcbc():
+    cProfile.run('benchmark_encrypt(content_1kb, aes.AES_PCBC(block_size=128, key_length=128), _iv)')
+    cProfile.run('benchmark_encrypt(content_1mb, aes.AES_PCBC(block_size=128, key_length=128), _iv)')
+    # cProfile.run('benchmark_encrypt(content_1gb, aes.AES_PCBC(block_size=128, key_length=128), _iv)')
+
+    cProfile.run('benchmark_decrypt(content_1kb, aes.AES_PCBC(block_size=128, key_length=128), _iv)')
+    cProfile.run('benchmark_decrypt(content_1mb, aes.AES_PCBC(block_size=128, key_length=128), _iv)')
+    # cProfile.run('benchmark_decrypt(content_1gb, aes.AES_PCBC(block_size=128, key_length=128), _iv)')
+
+
+def _benchmark_aes_cfb():
+    cProfile.run('benchmark_encrypt(content_1kb, aes.AES_CFB(block_size=128, key_length=128), _iv)')
+    cProfile.run('benchmark_encrypt(content_1mb, aes.AES_CFB(block_size=128, key_length=128), _iv)')
+    # cProfile.run('benchmark_encrypt(content_1gb, aes.AES_CFB(block_size=128, key_length=128), _iv)')
+
+    cProfile.run('benchmark_decrypt(content_1kb, aes.AES_CFB(block_size=128, key_length=128), _iv)')
+    cProfile.run('benchmark_decrypt(content_1mb, aes.AES_CFB(block_size=128, key_length=128), _iv)')
+    # cProfile.run('benchmark_decrypt(content_1gb, aes.AES_CFB(block_size=128, key_length=128), _iv)')
+
+
+def _benchmark_aes_ofb():
+    cProfile.run('benchmark_encrypt(content_1kb, aes.AES_OFB(block_size=128, key_length=128), _iv)')
+    cProfile.run('benchmark_encrypt(content_1mb, aes.AES_OFB(block_size=128, key_length=128), _iv)')
+    # cProfile.run('benchmark_encrypt(content_1gb, aes.AES_OFB(block_size=128, key_length=128), _iv)')
+
+    cProfile.run('benchmark_decrypt(content_1kb, aes.AES_OFB(block_size=128, key_length=128), _iv)')
+    cProfile.run('benchmark_decrypt(content_1mb, aes.AES_OFB(block_size=128, key_length=128), _iv)')
+    # cProfile.run('benchmark_decrypt(content_1gb, aes.AES_OFB(block_size=128, key_length=128), _iv)')
+
+
+def _benchmark_aes_ctr():
+    cProfile.run('benchmark_encrypt(content_1kb, aes.AES_CTR(block_size=128, key_length=128), _iv)')
+    cProfile.run('benchmark_encrypt(content_1mb, aes.AES_CTR(block_size=128, key_length=128), _iv)')
+    # cProfile.run('benchmark_encrypt(content_1gb, aes.AES_CTR(block_size=128, key_length=128), _iv)')
+
+    cProfile.run('benchmark_decrypt(content_1kb, aes.AES_CTR(block_size=128, key_length=128), _iv)')
+    cProfile.run('benchmark_decrypt(content_1mb, aes.AES_CTR(block_size=128, key_length=128), _iv)')
+    # cProfile.run('benchmark_decrypt(content_1gb, aes.AES_CTR(block_size=128, key_length=128), _iv)')
+
+
+def _benchmark_kalyna():
     cProfile.run('benchmark_encrypt(content_1kb, kalyna.Kalyna(block_size=128, key_length=128))')
-    cProfile.run('benchmark_encrypt(content_1mb, kalyna.Kalyna(block_size=128, key_length=128))')
+    # cProfile.run('benchmark_encrypt(content_1mb, kalyna.Kalyna(block_size=128, key_length=128))')
     # cProfile.run('benchmark_encrypt(content_1gb, kalyna.Kalyna(block_size=128, key_length=128))')
 
     cProfile.run('benchmark_decrypt(content_1kb, kalyna.Kalyna(block_size=128, key_length=128))')
-    cProfile.run('benchmark_decrypt(content_1mb, kalyna.Kalyna(block_size=128, key_length=128))')
+    # cProfile.run('benchmark_decrypt(content_1mb, kalyna.Kalyna(block_size=128, key_length=128))')
     # cProfile.run('benchmark_decrypt(content_1gb, kalyna.Kalyna(block_size=128, key_length=128))')
 
 
+def _benchmark_rc4():
+    cProfile.run('benchmark_encrypt(content_1kb, rc4.RC4(_key))')
+    cProfile.run('benchmark_encrypt(content_1mb, rc4.RC4(_key))')
+    # cProfile.run('benchmark_encrypt(content_1gb, rc4.RC4(_key))')
+
+
+def _benchmark_salsa20():
+    cProfile.run('benchmark_encrypt(content_1kb, salsa20.Salsa20(_salsa_key, _nonce, _block_counter, _rounds))')
+    cProfile.run('benchmark_encrypt(content_1mb, salsa20.Salsa20(_salsa_key, _nonce, _block_counter, _rounds))')
+    # cProfile.run('benchmark_encrypt(content_1gb, salsa20.Salsa20(_salsa_key, _nonce, _block_counter, _rounds))')
+
+
 if __name__ == '__main__':
-    main()
+    # _benchmark_aes()
+    # _benchmark_kalyna()
+    # _benchmark_aes_cbc()
+    # _benchmark_aes_pcbc()
+    # _benchmark_aes_cfb()
+    # _benchmark_aes_ofb()
+    # _benchmark_aes_ctr()
+    _benchmark_rc4()
+    # _benchmark_salsa20()

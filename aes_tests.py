@@ -39,67 +39,67 @@ class TestAESEncryptDecrypt(unittest.TestCase):
     ]
 
     def test_encrypt_decrypt_cbc(self):
-        algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt(algorithm.encrypt_cbc, algorithm.decrypt_cbc, _default_iv())
+        algorithm = aes.AES_CBC(key=_default_key())
+        self._helper_test_encrypt_decrypt(algorithm, _default_iv())
 
     def test_encrypt_decrypt_loop_cbc(self):
-        algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt_cbc, algorithm.decrypt_cbc, _default_iv())
+        algorithm = aes.AES_CBC(key=_default_key())
+        self._helper_test_encrypt_decrypt_loop(algorithm, _default_iv())
 
     def test_encrypt_decrypt_pcbc(self):
-        algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt(algorithm.encrypt_pcbc, algorithm.decrypt_pcbc, _default_iv())
+        algorithm = aes.AES_PCBC(key=_default_key())
+        self._helper_test_encrypt_decrypt(algorithm, _default_iv())
 
     def test_encrypt_decrypt_loop_pcbc(self):
-        algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt_pcbc, algorithm.decrypt_pcbc, _default_iv())
+        algorithm = aes.AES_PCBC(key=_default_key())
+        self._helper_test_encrypt_decrypt_loop(algorithm, _default_iv())
 
     def test_encrypt_decrypt_cfb(self):
-        algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt(algorithm.encrypt_cfb, algorithm.decrypt_cfb, _default_iv())
+        algorithm = aes.AES_CFB(key=_default_key())
+        self._helper_test_encrypt_decrypt(algorithm, _default_iv())
 
     def test_encrypt_decrypt_loop_cfb(self):
-        algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt_cfb, algorithm.decrypt_cfb, _default_iv())
+        algorithm = aes.AES_CFB(key=_default_key())
+        self._helper_test_encrypt_decrypt_loop(algorithm, _default_iv())
 
     def test_encrypt_decrypt_ofb(self):
-        algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt(algorithm.encrypt_ofb, algorithm.decrypt_ofb, _default_iv())
+        algorithm = aes.AES_OFB(key=_default_key())
+        self._helper_test_encrypt_decrypt(algorithm, _default_iv())
 
     def test_encrypt_decrypt_loop_ofb(self):
-        algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt_ofb, algorithm.decrypt_ofb, _default_iv())
+        algorithm = aes.AES_OFB(key=_default_key())
+        self._helper_test_encrypt_decrypt_loop(algorithm, _default_iv())
 
     def test_encrypt_decrypt_ctr(self):
-        algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt(algorithm.encrypt_ctr, algorithm.decrypt_ctr, _default_iv())
+        algorithm = aes.AES_CTR(key=_default_key())
+        self._helper_test_encrypt_decrypt(algorithm, _default_iv())
 
     def test_encrypt_decrypt_loop_ctr(self):
-        algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt_ctr, algorithm.decrypt_ctr, _default_iv())
+        algorithm = aes.AES_CTR(key=_default_key())
+        self._helper_test_encrypt_decrypt_loop(algorithm, _default_iv())
 
     def test_encrypt_decrypt(self):
         algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt(algorithm.encrypt, algorithm.decrypt)
+        self._helper_test_encrypt_decrypt(algorithm)
 
     def test_encrypt_decrypt_loop(self):
         algorithm = aes.AES(key=_default_key())
-        self._helper_test_encrypt_decrypt_loop(algorithm.encrypt, algorithm.decrypt)
+        self._helper_test_encrypt_decrypt_loop(algorithm)
 
-    def _helper_test_encrypt_decrypt(self, encrypt_func, decrypt_func, iv=None):
+    def _helper_test_encrypt_decrypt(self, encryptor, iv=None):
         for plaintext in self._tests:
             if iv is None:
-                self.assertEqual(plaintext, decrypt_func(encrypt_func(plaintext)))
+                self.assertEqual(plaintext, encryptor.decrypt(encryptor.encrypt(plaintext)))
             else:
-                self.assertEqual(plaintext, decrypt_func(encrypt_func(plaintext, iv), iv))
+                self.assertEqual(plaintext, encryptor.decrypt(encryptor.encrypt(plaintext, iv), iv))
 
-    def _helper_test_encrypt_decrypt_loop(self, encrypt_func, decrypt_func, iv=None):
+    def _helper_test_encrypt_decrypt_loop(self, encryptor, iv=None):
         for plaintext_length in range(1, 100):
             plaintext = b'a' * plaintext_length
             if iv is None:
-                self.assertEqual(plaintext, decrypt_func(encrypt_func(plaintext)))
+                self.assertEqual(plaintext, encryptor.decrypt(encryptor.encrypt(plaintext)))
             else:
-                self.assertEqual(plaintext, decrypt_func(encrypt_func(plaintext, iv), iv))
+                self.assertEqual(plaintext, encryptor.decrypt(encryptor.encrypt(plaintext, iv), iv))
 
 
 class TestAESUtility(unittest.TestCase):
@@ -385,9 +385,7 @@ class TestAESEncryptorCipher(unittest.TestCase):
         self.assertEqual(execution_data[1][0], execution_data[0][0])
 
         for i, execution_datum in enumerate(execution_data):
-            print(i)
             if len(execution_datum) == 5:
-                print('mod 5')
                 encryptor._sub_bytes(execution_datum[0])
                 self.assertEqual(execution_datum[1], execution_datum[0])
 
@@ -400,7 +398,6 @@ class TestAESEncryptorCipher(unittest.TestCase):
                 encryptor._add_round_key(execution_datum[3], execution_datum[4])
                 self.assertEqual(execution_data[i + 1][0], execution_datum[3])
             elif len(execution_datum) == 4:
-                print('mod 4')
                 encryptor._sub_bytes(execution_datum[0])
                 self.assertEqual(execution_datum[1], execution_datum[0])
 
@@ -425,7 +422,6 @@ class TestAESEncryptorInvCipher(unittest.TestCase):
 
 class TestAESEncryptorUtility(unittest.TestCase):
     def test_key_expansion(self):
-        print(aes._str_to_bytes('2b7e1516'))
         expected_round_keys = [
             [b'\x2b\x7e\x15\x16', b'\x28\xae\xd2\xa6', b'\xab\xf7\x15\x88', b'\x09\xcf\x4f\x3c'],
             [b'\xa0\xfa\xfe\x17', b'\x88\x54\x2c\xb1', b'\x23\xa3\x39\x39', b'\x2a\x6c\x76\x05'],
@@ -443,7 +439,6 @@ class TestAESEncryptorUtility(unittest.TestCase):
         round_keys = encryptor._round_keys
         for i, round_key in enumerate(round_keys):
             for j, word in enumerate(round_key):
-                print(f'{i} {j}')
                 self.assertEqual(list(expected_round_keys[i][j]), word)
 
     def test_in_to_state(self):
