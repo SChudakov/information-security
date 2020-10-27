@@ -35,3 +35,7 @@ class SHA256(unittest.TestCase):
         actual_hash = sha256.SHA256.hash(message)
         self.assertEqual(256 // 8, len(actual_hash))
         self.assertEqual(expected_hash, actual_hash)
+
+
+if __name__ == '__main__':
+    unittest.main()

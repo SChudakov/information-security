@@ -101,14 +101,6 @@ class SHA256:
         return bytes(padded_message)
 
     @staticmethod
-    def _int_to_bytes(value: int, num_bytes: int) -> List[int]:
-        result = list()
-        for _ in range(num_bytes):
-            result.append(value & 0xff)
-            value >>= 8
-        return result
-
-    @staticmethod
     def _parse_message_into_blocks(message: bytes) -> List[bytes]:
         num_bytes = 512 // 8
         return [message[i:i + num_bytes] for i in range(0, len(message), num_bytes)]
@@ -144,8 +136,3 @@ class SHA256:
     @staticmethod
     def _ROTR(word: int, bits: int):
         return ((word >> bits) & 0xffffffff) | (word << (32 - bits))
-
-
-if __name__ == '__main__':
-    message = b'Secret message'
-    print(f'hashed message: {SHA256.hash(message)}')
