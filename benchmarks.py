@@ -27,16 +27,16 @@ def _write_file(file_name: str, content: bytes):
 
 def benchmark_encrypt(content, algorithm, iv=None):
     if iv is None:
-        _ = algorithm.encrypt(content)
+        _ = algorithm._encrypt_block(content)
     else:
-        _ = algorithm.encrypt(content, iv)
+        _ = algorithm._encrypt_block(content, iv)
 
 
 def benchmark_decrypt(content, algorithm, iv=None):
     if iv is None:
-        _ = algorithm.decrypt(content)
+        _ = algorithm._decrypt_block(content)
     else:
-        _ = algorithm.decrypt(content, iv)
+        _ = algorithm._decrypt_block(content, iv)
 
 
 content_1kb = _load_file("1kb")

@@ -19,3 +19,7 @@ class MillerRabinTest(unittest.TestCase):
         self.assertTrue(MillerRabin.is_prime(11))
         self.assertTrue(MillerRabin.is_prime(13))
         self.assertTrue(MillerRabin.is_prime(17))
+        self.assertTrue(
+            MillerRabin.is_prime(93936249734338324003104221757738110156736455434659878151532909804484492259923, 10000))
+        self.assertTrue(
+            MillerRabin.is_prime(76580079784380526764463226337295859891550267676102596594318783887165786402677, 10000))

@@ -174,7 +174,7 @@ class TestKupynaUtility(unittest.TestCase):
             kupyna.Kupyna(520)
 
     def _helper_test_init(self, algorithm, n, l, t, c, nbytes):
-        self.assertEqual(n, algorithm._n)
+        self.assertEqual(n, algorithm.n)
         self.assertEqual(l, algorithm._l)
         self.assertEqual(t, algorithm._t)
         self.assertEqual(c, algorithm._c)
@@ -231,7 +231,7 @@ class TestKupynaUtility(unittest.TestCase):
         self._helper_test_pad(kupyna.Kupyna(512), message6, 128, expected_padding6)
 
     def _helper_test_pad(self, algorithm, message, expected_pad_nbytes, expected_padding):
-        actual_padding = algorithm._pad(message)
+        actual_padding = algorithm._pad_block(message)
         self.assertEqual(expected_pad_nbytes, algorithm._pad_nbytes)
         self.assertEqual(expected_padding, actual_padding[:expected_pad_nbytes])
 
@@ -313,7 +313,7 @@ class TestKupynaUtility(unittest.TestCase):
         self._helper_test_diges(expected_padding, data, state, expected_state, algorithm, 128)
 
     def _helper_test_diges(self, expected_padding, data, state, expected_state, algorithm, pad_nbytes=64):
-        padding = algorithm._pad(data)
+        padding = algorithm._pad_block(data)
         self.assertEqual(expected_padding, padding[:pad_nbytes])
         algorithm._digest(state, expected_padding, data)
         self.assertEqual(expected_state, state)

@@ -89,17 +89,17 @@ class TestAESEncryptDecrypt(unittest.TestCase):
     def _helper_test_encrypt_decrypt(self, encryptor, iv=None):
         for plaintext in self._tests:
             if iv is None:
-                self.assertEqual(plaintext, encryptor.decrypt(encryptor.encrypt(plaintext)))
+                self.assertEqual(plaintext, encryptor._decrypt_block(encryptor._encrypt_block(plaintext)))
             else:
-                self.assertEqual(plaintext, encryptor.decrypt(encryptor.encrypt(plaintext, iv), iv))
+                self.assertEqual(plaintext, encryptor._decrypt_block(encryptor._encrypt_block(plaintext, iv), iv))
 
     def _helper_test_encrypt_decrypt_loop(self, encryptor, iv=None):
         for plaintext_length in range(1, 100):
             plaintext = b'a' * plaintext_length
             if iv is None:
-                self.assertEqual(plaintext, encryptor.decrypt(encryptor.encrypt(plaintext)))
+                self.assertEqual(plaintext, encryptor._decrypt_block(encryptor._encrypt_block(plaintext)))
             else:
-                self.assertEqual(plaintext, encryptor.decrypt(encryptor.encrypt(plaintext, iv), iv))
+                self.assertEqual(plaintext, encryptor._decrypt_block(encryptor._encrypt_block(plaintext, iv), iv))
 
 
 class TestAESUtility(unittest.TestCase):
