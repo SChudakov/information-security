@@ -169,11 +169,11 @@ class AES_CFB(_BaseAES):
         assert len(iv) == 16
 
         blocks = []
-        prev_ciphertext = iv
+        previous = iv
         for plaintext_block in self._split_blocks(plaintext, require_padding=False):
-            ciphertext_block = self._xor_bytes(plaintext_block, self._encryptor.cipher(prev_ciphertext))
-            blocks.append(ciphertext_block)
-            prev_ciphertext = ciphertext_block
+            block = self._xor_bytes(plaintext_block, self._encryptor.cipher(previous))
+            blocks.append(block)
+            previous = block
 
         return b''.join(blocks)
 
@@ -229,11 +229,11 @@ class AES_CTR(_BaseAES):
         assert len(iv) == 16
 
         blocks = []
-        nonce = iv
+        previousz = iv
         for plaintext_block in self._split_blocks(plaintext, require_padding=False):
-            block = self._xor_bytes(plaintext_block, self._encryptor.cipher(nonce))
+            block = self._xor_bytes(plaintext_block, self._encryptor.cipher(previous))
             blocks.append(block)
-            nonce = self._inc_bytes(nonce)
+            previous = self._inc_bytes(previous)
 
         return b''.join(blocks)
 
